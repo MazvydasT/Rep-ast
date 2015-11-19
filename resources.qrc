@@ -1,0 +1,18 @@
+<RCC>
+    <qresource prefix="/images">
+        <file>minus.png</file>
+        <file>plus.png</file>
+        <file>rocket.png</file>
+        <file>down.png</file>
+        <file>up.png</file>
+        <file>load.png</file>
+        <file>addImage.png</file>
+        <file>removeImage.png</file>
+        <file>file.png</file>
+        <file>files.png</file>
+        <file>fastReport.png</file>
+    </qresource>
+    <qresource prefix="/template">
+        <file>template.pptx</file>
+    </qresource>
+</RCC>
