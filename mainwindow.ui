@@ -372,7 +372,7 @@
              <enum>QAbstractItemView::SelectRows</enum>
             </property>
             <property name="verticalScrollMode">
-             <enum>QAbstractItemView::ScrollPerPixel</enum>
+             <enum>QAbstractItemView::ScrollPerItem</enum>
             </property>
             <property name="horizontalScrollMode">
              <enum>QAbstractItemView::ScrollPerPixel</enum>
@@ -726,6 +726,12 @@ Feasibility Issues</string>
             <property name="selectionBehavior">
              <enum>QAbstractItemView::SelectRows</enum>
             </property>
+            <property name="verticalScrollMode">
+             <enum>QAbstractItemView::ScrollPerItem</enum>
+            </property>
+            <property name="horizontalScrollMode">
+             <enum>QAbstractItemView::ScrollPerPixel</enum>
+            </property>
             <property name="sortingEnabled">
              <bool>true</bool>
             </property>
@@ -804,6 +810,12 @@ Feasibility Issues</string>
           </property>
           <property name="selectionBehavior">
            <enum>QAbstractItemView::SelectRows</enum>
+          </property>
+          <property name="verticalScrollMode">
+           <enum>QAbstractItemView::ScrollPerItem</enum>
+          </property>
+          <property name="horizontalScrollMode">
+           <enum>QAbstractItemView::ScrollPerPixel</enum>
           </property>
           <property name="sortingEnabled">
            <bool>true</bool>
