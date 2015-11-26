@@ -429,6 +429,10 @@ void MainWindow::on_toolButtonFinish_clicked()
         return;
     }
 
+	QString version = powerPointApplication->property("Version").toString();
+
+	bool office2010 = version == "14.0";
+
     QScopedPointer<QAxObject> presentations(powerPointApplication->querySubObject("Presentations"));
 
     QScopedPointer<QAxObject> presentation(presentations->querySubObject("Open(QString, bool, bool, bool)", QDir::toNativeSeparators(reportSavePath), false, false, true));
@@ -556,10 +560,17 @@ void MainWindow::on_toolButtonFinish_clicked()
             }
 
             else if(shape->dynamicCall("HasChart").toBool()) {
-                QScopedPointer<QAxObject> chart(shape->querySubObject("Chart"));
+				QScopedPointer<QAxObject> chart(shape->querySubObject("Chart"));
 
-                QScopedPointer<QAxObject> worksheet(chart->querySubObject("ChartData")
-                                                    ->querySubObject("Workbook")->querySubObject("Worksheets(int)", 1));
+				QScopedPointer<QAxObject> chartData(chart->querySubObject("ChartData"));
+
+				if(office2010) {
+					chartData->dynamicCall("Activate()");
+				}
+
+				QScopedPointer<QAxObject> workbook(chartData->querySubObject("Workbook"));
+
+				QScopedPointer<QAxObject> worksheet(workbook->querySubObject("Worksheets(int)", 1));
 
                 QScopedPointer<QAxObject> chartDataTable(worksheet->querySubObject("ListObjects(QString)", "Table1"));
 
@@ -581,9 +592,15 @@ void MainWindow::on_toolButtonFinish_clicked()
                             range->setProperty("Value", preAIMSByIssueCategory[index].toList()[0].toInt());
                         }
 
-                        range.reset(worksheet->querySubObject("Range(QString)", "A1:B" + QString::number(index < 2 ? 2 : index)));
+						QString address = "A1:B" + QString::number(index < 2 ? 2 : index);
 
-                        chartDataTable->dynamicCall("Resize(IDispatch*)", range->asVariant());
+						range.reset(worksheet->querySubObject("Range(QString)", address));
+
+						chartDataTable->dynamicCall("Resize(IDispatch*)", range->asVariant());
+
+						if(office2010) {
+							chart->dynamicCall("SetSourceData(QString)", "='" + worksheet->property("Name").toString() + "'!" + address);
+						}
                     }
 
                     else if(rangeValue == "CoC") {
@@ -597,9 +614,15 @@ void MainWindow::on_toolButtonFinish_clicked()
                             range->setProperty("Value", preAIMSSummaryByCoC[index].toList()[0].toInt());
                         }
 
-                        range.reset(worksheet->querySubObject("Range(QString)", "A1:B" + QString::number(index < 2 ? 2 : index)));
+						QString address = "A1:B" + QString::number(index < 2 ? 2 : index);
 
-                        chartDataTable->dynamicCall("Resize(IDispatch*)", range->asVariant());
+						range.reset(worksheet->querySubObject("Range(QString)", address));
+
+						chartDataTable->dynamicCall("Resize(IDispatch*)", range->asVariant());
+
+						if(office2010) {
+							chart->dynamicCall("SetSourceData(QString)", "='" + worksheet->property("Name").toString() + "'!" + address);
+						}
                     }
                 }
 
@@ -621,9 +644,15 @@ void MainWindow::on_toolButtonFinish_clicked()
                             range->setProperty("Value", aimsByIssueCategory[index].toList()[0].toInt());
                         }
 
-                        range.reset(worksheet->querySubObject("Range(QString)", "A1:B" + QString::number(index < 2 ? 2 : index)));
+						QString address = "A1:B" + QString::number(index < 2 ? 2 : index);
 
-                        chartDataTable->dynamicCall("Resize(IDispatch*)", range->asVariant());
+						range.reset(worksheet->querySubObject("Range(QString)", address));
+
+						chartDataTable->dynamicCall("Resize(IDispatch*)", range->asVariant());
+
+						if(office2010) {
+							chart->dynamicCall("SetSourceData(QString)", "='" + worksheet->property("Name").toString() + "'!" + address);
+						}
                     }
 
                     else if(rangeValue == "CoC") {
@@ -637,9 +666,15 @@ void MainWindow::on_toolButtonFinish_clicked()
                             range->setProperty("Value", aimsSummaryByCoC[index].toList()[0].toInt());
                         }
 
-                        range.reset(worksheet->querySubObject("Range(QString)", "A1:B" + QString::number(index < 2 ? 2 : index)));
+						QString address = "A1:B" + QString::number(index < 2 ? 2 : index);
 
-                        chartDataTable->dynamicCall("Resize(IDispatch*)", range->asVariant());
+						range.reset(worksheet->querySubObject("Range(QString)", address));
+
+						chartDataTable->dynamicCall("Resize(IDispatch*)", range->asVariant());
+
+						if(office2010) {
+							chart->dynamicCall("SetSourceData(QString)", "='" + worksheet->property("Name").toString() + "'!" + address);
+						}
                     }
                 }
 
@@ -657,9 +692,18 @@ void MainWindow::on_toolButtonFinish_clicked()
                         range->setProperty("Value", preAIMSSummaryByCoC[index].toList()[0].toString());
                     }
 
-                    range.reset(worksheet->querySubObject("Range(QString)", "A1:C" + QString::number(cocs.count() < 2 ? 2 : cocs.count())));
+					QString lastRow = QString::number(cocs.count() < 2 ? 2 : cocs.count());
 
-                    chartDataTable->dynamicCall("Resize(IDispatch*)", range->asVariant());
+					range.reset(worksheet->querySubObject("Range(QString)", "A1:C" + lastRow));
+
+					chartDataTable->dynamicCall("Resize(IDispatch*)", range->asVariant());
+
+					if(office2010) {
+						chart->dynamicCall("SetSourceData(QString)", "='" + worksheet->property("Name").toString() + "'!" + "A1:B" + lastRow);
+						QScopedPointer<QAxObject> series(chart->querySubObject("SeriesCollection(int)",1));
+						series->dynamicCall("ApplyDataLabels(int)", -4142);
+						series->dynamicCall("ApplyDataLabels(int)", 2);
+					}
 
                     range.reset(worksheet->querySubObject("Range(QString)", "A" + QString::number(cocs.count() + 1) + ":D100"));
                     range->dynamicCall("ClearContents()");
@@ -728,15 +772,60 @@ void MainWindow::on_toolButtonFinish_clicked()
 
                     table1RowTracker--;
 
-                    range.reset(worksheet->querySubObject("Range(QString)", "A1:D" + QString::number(table1RowTracker)));
-                    chartDataTable->dynamicCall("Resize(IDispatch*)", range->asVariant());
+					QString row = QString::number(table1RowTracker);
 
+					range.reset(worksheet->querySubObject("Range(QString)", "A1:D" + row));
+					chartDataTable->dynamicCall("Resize(IDispatch*)", range->asVariant());
+
+					QScopedPointer<QAxObject> series;
+
+					if(office2010) {
+						series.reset(chart->querySubObject("SeriesCollection(int)", 1));
+						series->setProperty("XValues", "='" + worksheet->property("Name").toString() + "'!" + "A2:A" + row);
+						series->setProperty("Values", "='" + worksheet->property("Name").toString() + "'!" + "B2:B" + row);
+
+						series.reset(chart->querySubObject("SeriesCollection(int)", 2));
+						series->setProperty("Values", "='" + worksheet->property("Name").toString() + "'!" + "C2:C" + row);
+
+						series.reset(chart->querySubObject("SeriesCollection(int)", 3));
+						series->setProperty("Values", "='" + worksheet->property("Name").toString() + "'!" + "D2:D" + row);
+					}
 
                     table2RowTracker--;
 
-                    range.reset(worksheet->querySubObject("Range(QString)", "F1:H" + QString::number(table2RowTracker < 2 ? 2 : table2RowTracker)));
+					row = QString::number(table2RowTracker < 2 ? 2 : table2RowTracker);
+
+					range.reset(worksheet->querySubObject("Range(QString)", "F1:H" + row));
                     chartDataTable.reset(worksheet->querySubObject("ListObjects(QString)", "Table2"));
-                    chartDataTable->dynamicCall("Resize(IDispatch*)", range->asVariant());
+					chartDataTable->dynamicCall("Resize(IDispatch*)", range->asVariant());
+
+					if(office2010) {
+						series.reset(chart->querySubObject("SeriesCollection(int)", 4));
+						series->setProperty("XValues", "='" + worksheet->property("Name").toString() + "'!" + "F2:F" + row);
+						series->setProperty("Values", "='" + worksheet->property("Name").toString() + "'!" + "G2:G" + row);
+						series->dynamicCall("ApplyDataLabels(int)", -4142);
+						series->dynamicCall("ApplyDataLabels(int)", 2);
+
+						QScopedPointer<QAxObject> dataLabels(series->querySubObject("DataLabels()"));
+
+						dataLabels->setProperty("Position", 0);
+
+						chart->dynamicCall("Refresh()");
+
+						int dataLabelsCount = dataLabels->property("Count").toInt();
+
+						int labelIndexTracker = 1;
+
+						for(int index = 1; index <= dataLabelsCount; index++) {
+							if(index == labelIndexTracker) {
+								labelIndexTracker += 3;
+							}
+
+							else {
+								dataLabels->querySubObject("Item(int)", index)->dynamicCall("Delete()");
+							}
+						}
+					}
                 }
 
                 else if(slideIndex == 8) {
@@ -760,8 +849,14 @@ void MainWindow::on_toolButtonFinish_clicked()
                         }
                     }
 
-                    range.reset(worksheet->querySubObject("Range(QString)", "A1:" + cell->dynamicCall("Address").toString().replace("$", "")));
-                    chartDataTable->dynamicCall("Resize(IDispatch*)", range->asVariant());
+					QString address = "A1:" + cell->dynamicCall("Address").toString().replace("$", "");
+
+					range.reset(worksheet->querySubObject("Range(QString)", address));
+					chartDataTable->dynamicCall("Resize(IDispatch*)", range->asVariant());
+
+					if(office2010) {
+						chart->dynamicCall("SetSourceData(QString)", "='" + worksheet->property("Name").toString() + "'!" + address);
+					}
                 }
 
                 else if(slideIndex == 9) {
@@ -785,8 +880,14 @@ void MainWindow::on_toolButtonFinish_clicked()
                         }
                     }
 
-                    range.reset(worksheet->querySubObject("Range(QString)", "A1:" + cell->dynamicCall("Address").toString().replace("$", "")));
-                    chartDataTable->dynamicCall("Resize(IDispatch*)", range->asVariant());
+					QString address = "A1:" + cell->dynamicCall("Address").toString().replace("$", "");
+
+					range.reset(worksheet->querySubObject("Range(QString)", address));
+					chartDataTable->dynamicCall("Resize(IDispatch*)", range->asVariant());
+
+					if(office2010) {
+						chart->dynamicCall("SetSourceData(QString)", "='" + worksheet->property("Name").toString() + "'!" + address);
+					}
                 }
 
                 else if(slideIndex == 10) {
@@ -829,11 +930,17 @@ void MainWindow::on_toolButtonFinish_clicked()
                         rowTracker++;
                     }
 
-                    cell.reset(worksheet->querySubObject("Cells(int, int)", rowTracker, columnIndex + 1));
+					cell.reset(worksheet->querySubObject("Cells(int, int)", rowTracker, columnIndex/* + 1*/));
 
-                    range.reset(worksheet->querySubObject("Range(QString)", "A1:" + (rowTracker < 2 || columnIndex < 1 ? "B2" : cell->dynamicCall("Address").toString().replace("$", ""))));
-                    chartDataTable->dynamicCall("Resize(IDispatch*)", range->asVariant());
+					QString lowerRightAddress = (rowTracker < 2 || columnIndex < 1 ? "B2" : cell->dynamicCall("Address").toString().replace("$", ""));
 
+					range.reset(worksheet->querySubObject("Range(QString)", "A1:" + lowerRightAddress));
+					chartDataTable->dynamicCall("Resize(IDispatch*)", range->asVariant());
+
+					if(office2010) {
+						chart->dynamicCall("SetSourceData(QString)", "='" + worksheet->property("Name").toString() + "'!" + "C1:" + lowerRightAddress);
+						chart->querySubObject("SeriesCollection(int)", 1)->setProperty("XValues", "='" + worksheet->property("Name").toString() + "'!" + "B2:B" + QString::number(rowTracker));
+					}
 
                     QScopedPointer<QAxObject> chartShapes(chart->querySubObject("Shapes"));
 
@@ -875,6 +982,16 @@ void MainWindow::on_toolButtonFinish_clicked()
                         shapeLeft += shapeWidth;
                     }
                 }
+
+				if(version == "14.0") {
+					workbook->dynamicCall("Close()");
+
+					/*workbook->setProperty("Saved", true);
+
+					if(workbookApplication->querySubObject("Workbooks")->property("Count").toInt() == 0) {
+						workbookApplication->dynamicCall("Quit()");
+					}*/
+				}
             }
         }
 
