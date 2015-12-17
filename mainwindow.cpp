@@ -225,8 +225,8 @@ void MainWindow::parseJSONFile()
             feasibilityIssues.length() != 1 || feasibilityIssues[0].toList().length() != 1 ||
             noFeasibilityIssues.length() != 1 || noFeasibilityIssues[0].toList().length() != 1 ||
             numberOfAIMSRaisedVariantList.length() != 1 || numberOfAIMSRaisedVariantList[0].toList().length() != 1 ||
-            topIssues.length() < 2 ||
-            allOtherIssues.length() < 2) {return;}
+			topIssues.length() < 1 ||
+			allOtherIssues.length() < 1) {return;}
 
     programme = programmeVariantList[0].toList()[0].toString();
     modelYear = modelYearVariantList[0].toList()[0].toString();
